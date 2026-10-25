@@ -1,0 +1,6 @@
+{
+  "name": "dq3-watch",
+  "private": true,
+  "type": "module",
+  "description": "DQ3 手表版（Vela RPK）"
+}

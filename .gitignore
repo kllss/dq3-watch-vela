@@ -1,0 +1,36 @@
+# ===== ROM 与本地派生数据：绝不提交 =====
+/data/
+*.sfc
+*.smc
+*.fig
+*.swc
+*.zip
+*.sav
+*.state
+
+# 本机私有配置（可能含密钥）
+config.local.json
+
+# ===== 构建产物 =====
+node_modules/
+game/.build/
+game/build/
+game/dist/
+**/.build/
+
+# ===== 与本仓库无关的工作区内容 =====
+.workbuddy/
+# 平台能力研究（独立仓库：redmi-watch-6-vela-input）
+rw6-input-research/
+rw6-vela-input-research/
+rw6-vela-input-research.bundle
+# 第三方调研与下载缓存
+_research/
+_downloads/
+_net/
+# 同期另一个应用工程（尚未上传）
+watchmate/
+
+# ===== 临时文件 =====
+.tmp-*
+*.log

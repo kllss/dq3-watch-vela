@@ -1,0 +1,40 @@
+{
+  "package": "com.klls.dq3watch",
+  "name": "DQ3 手表版",
+  "icon": "/Common/icon.png",
+  "versionName": "0.1.2",
+  "versionCode": 3,
+  "minAPILevel": 1,
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    }
+  ],
+  "permissions": [],
+  "config": {
+    "logLevel": "debug",
+    "designWidth": 432
+  },
+  "router": {
+    "entry": "pages/Title",
+    "pages": {
+      "pages/Title": {
+        "component": "index",
+        "path": "/"
+      },
+      "pages/Game": {
+        "component": "index",
+        "path": "/game"
+      }
+    }
+  },
+  "display": {
+    "backgroundColor": "#000000"
+  }
+}

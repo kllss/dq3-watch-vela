@@ -1,0 +1,19 @@
+<script>
+export default {
+  onCreate() {
+    console.log('[dq3] app onCreate')
+  },
+  onShow() {
+    console.log('[dq3] app onShow')
+  },
+  onHide() {
+    console.log('[dq3] app onHide')
+  },
+  onDestroy() {
+    console.log('[dq3] app onDestroy')
+  },
+  onError(e) {
+    console.log('[dq3] app onError ' + e)
+  }
+}
+</script>

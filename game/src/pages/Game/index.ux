@@ -1,0 +1,557 @@
+<template>
+  <div class="page">
+
+    <div class="top">
+      <text class="mapname" style="font-size: 13px">{{mapName}}</text>
+      <text class="steps" style="font-size: 11px">第 {{steps}} 步</text>
+    </div>
+
+    <stack class="map" id="map" onclick="onMapTap">
+      <image class="mapimg" src="{{mapSrc}}" style="width: {{imgW}}px; height: {{imgH}}px; left: {{imgLeft}}px; top: {{imgTop}}px"></image>
+      <text class="actor" style="left: {{actorX}}px; top: {{actorY}}px; font-size: 20px">勇</text>
+      <text class="actor npc" if="{{npcOn}}" style="left: {{npcX}}px; top: {{npcY}}px; font-size: 20px">人</text>
+    </stack>
+
+    <div class="dialog" if="{{dialogOn}}" onclick="advance">
+      <text class="dtitle" style="font-size: 11px">{{dtitle}}</text>
+      <text class="dline" style="font-size: 14px">{{dline}}</text>
+      <text class="dhint" style="font-size: 9px">点一下继续（{{didx}}/{{dcount}}）</text>
+    </div>
+
+    <div class="pad" if="{{!dialogOn}}">
+      <div class="pbtn" onclick="onDir(0, -1)"><text class="pbtn-t" style="font-size: 18px">↑</text></div>
+      <div class="pbtn" onclick="onDir(-1, 0)"><text class="pbtn-t" style="font-size: 18px">←</text></div>
+      <div class="pbtn" onclick="onDir(1, 0)"><text class="pbtn-t" style="font-size: 18px">→</text></div>
+      <div class="pbtn" onclick="onDir(0, 1)"><text class="pbtn-t" style="font-size: 18px">↓</text></div>
+    </div>
+
+    <div class="status" if="{{!dialogOn}}">
+      <text class="st" style="font-size: 11px">Lv {{lv}}</text>
+      <text class="st" style="font-size: 11px">HP {{hp}}/{{hpMax}}</text>
+      <text class="st" style="font-size: 11px">MP {{mp}}/{{mpMax}}</text>
+      <text class="st gold" style="font-size: 11px">{{gold}} G</text>
+    </div>
+
+    <div class="bottom" if="{{!dialogOn}}">
+      <div class="bbtn" onclick="onSave"><text class="bbtn-t" style="font-size: 12px">存档</text></div>
+      <div class="bbtn" onclick="onBack"><text class="bbtn-t" style="font-size: 12px">返回标题</text></div>
+    </div>
+
+    <text class="err" if="{{err}}" style="font-size: 10px">{{err}}</text>
+    <text class="dbg" style="font-size: 9px">{{dbg}} · {{renderMs}}ms</text>
+    <text class="dbg" style="font-size: 9px">模块：{{mods}}</text>
+
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import storage from '@system.storage'
+import '../../core/store.js'
+import '../../core/save.js'
+import '../../core/game.js'
+import '../../core/world.js'
+
+const storeApi = globalThis.__dq3_store_api || {}
+const saveApi = globalThis.__dq3_save_api || {}
+const gameApi = globalThis.__dq3_game_api || {}
+const world = globalThis.__dq3_world || { maps: {}, startMap: '' }
+
+const { getStore } = storeApi
+const { saveGame } = saveApi
+const { newGame, currentMap, camera, tryMove } = gameApi
+
+export default {
+  private: {
+    mapSrc: '',
+    imgW: 540,
+    imgH: 468,
+    imgLeft: 0,
+    imgTop: 0,
+    actorX: 0,
+    actorY: 0,
+    npcOn: false,
+    npcX: 0,
+    npcY: 0,
+    cam: { x: 0, y: 0 },
+    mapName: '',
+    steps: 0,
+    lv: 3,
+    hp: 34,
+    hpMax: 34,
+    mp: 6,
+    mpMax: 6,
+    gold: 128,
+    dialogOn: false,
+    dtitle: '',
+    dline: '',
+    dlines: [],
+    didx: 1,
+    dcount: 1,
+    renderMs: 0,
+    pendingRender: false,
+    lastStepAt: 0,
+    mods: '',
+    err: '',
+    dbg: ''
+  },
+
+  onInit() {
+    try {
+      const s = getStore()
+      if (!s.game) {
+        s.game = newGame(world)
+      }
+      this.syncStats()
+      this.render()
+    } catch (e) {
+      this.err = 'init: ' + e
+    }
+    try {
+      const list = (typeof globalThis !== 'undefined' && globalThis.__dq3_modules__) || []
+      this.mods = list.length ? list.join(' ').replace(/\.js@m1/g, '') : 'none'
+    } catch (e) {
+      this.mods = '?'
+    }
+    this.dbg = '就绪'
+  },
+
+  onReady() {
+    const g = getStore().game
+    console.log('[dq3] game ready · rows=' + this.rows.length + ' · at ' + (g ? g.x + ',' + g.y : '?') + ' · render=' + this.renderMs + 'ms · mods=' + this.mods)
+  },
+
+  onShow() {
+    try {
+      const s = getStore()
+      s.inGame = true
+      this.syncStats()
+      this.render()
+    } catch (e) {
+      this.err = 'show: ' + e
+    }
+  },
+
+  onHide() {
+    this.persist('hide')
+  },
+
+  onBackPress() {
+    return false
+  },
+
+  syncStats() {
+    const st = getStore().stats
+    this.lv = st.lv
+    this.hp = st.hp
+    this.hpMax = st.hpMax
+    this.mp = st.mp
+    this.mpMax = st.mpMax
+    this.gold = st.gold
+  },
+
+  render() {
+    const t0 = new Date().getTime()
+    const s = getStore()
+    const g = s.game
+    const m = currentMap(world, g)
+    const cam = camera(m, g, 11, 9)
+
+    this.cam = cam
+    this.mapSrc = '/Common/map/' + g.mapId + '.png'
+    this.imgW = m.w * 36
+    this.imgH = m.h * 36
+    this.imgLeft = -cam.x * 36
+    this.imgTop = -cam.y * 36
+    this.actorX = (g.x - cam.x) * 36 + 9
+    this.actorY = (g.y - cam.y) * 36 + 5
+
+    // NPC 只在视口内显示
+    let npc = null
+    const list = m.npcs || []
+    for (let i = 0; i < list.length; i++) {
+      const n = list[i]
+      if (n.x >= cam.x && n.x < cam.x + 11 && n.y >= cam.y && n.y < cam.y + 9) {
+        npc = n
+        break
+      }
+    }
+    if (npc) {
+      this.npcOn = true
+      this.npcX = (npc.x - cam.x) * 36 + 9
+      this.npcY = (npc.y - cam.y) * 36 + 5
+    } else {
+      this.npcOn = false
+    }
+
+    this.mapName = m.name
+    this.steps = g.steps
+    this.renderMs = new Date().getTime() - t0
+  },
+
+  /** 连点时合并渲染，避免每次点击都重建 99 格 */
+  scheduleRender() {
+    if (this.pendingRender) {
+      return
+    }
+    this.pendingRender = true
+    setTimeout(() => {
+      this.pendingRender = false
+      this.render()
+    }, 16)
+  },
+
+  /**
+   * 点地图：先按坐标算出格，再换算成相对玩家的方向。
+   * Vela 不支持 onclick 带参数，所以只能在容器上收一次事件。
+   */
+  onMapTap(e) {
+    if (this.dialogOn) {
+      this.advance()
+      return
+    }
+    const p = this.point(e)
+    if (!p) {
+      this.dbg = '拿不到点击坐标'
+      return
+    }
+    let rect = null
+    try {
+      const el = this.$element('map')
+      rect = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null
+    } catch (err) {}
+    if (!rect) {
+      this.dbg = '拿不到地图位置'
+      return
+    }
+    const vx = Math.floor((p.x - rect.left) / 36)
+    const vy = Math.floor((p.y - rect.top) / 36)
+    if (vx < 0 || vy < 0 || vx >= 11 || vy >= 9) {
+      this.dbg = '点在格点外'
+      return
+    }
+    this.dbg = '点 (' + (this.cam.x + vx) + ',' + (this.cam.y + vy) + ')'
+    this.onTile(this.cam.x + vx, this.cam.y + vy)
+  },
+
+  point(e) {
+    if (!e) {
+      return null
+    }
+    let t = null
+    if (e.touches && e.touches.length) {
+      t = e.touches[0]
+    } else if (e.changedTouches && e.changedTouches.length) {
+      t = e.changedTouches[0]
+    } else {
+      t = e
+    }
+    if (!t) {
+      return null
+    }
+    const x = this.num(t.clientX, t.x, t.pageX)
+    const y = this.num(t.clientY, t.y, t.pageY)
+    if (x === null || y === null) {
+      return null
+    }
+    return { x: x, y: y }
+  },
+
+  num() {
+    for (let i = 0; i < arguments.length; i++) {
+      const v = arguments[i]
+      if (typeof v === 'number' && !isNaN(v)) {
+        return v
+      }
+    }
+    return null
+  },
+
+  /** 点格子：换算成相对玩家的方向 */
+  onTile(x, y) {
+    if (this.dialogOn) {
+      this.advance()
+      return
+    }
+    const g = getStore().game
+    const px = g.x - this.cam.x
+    const py = g.y - this.cam.y
+    let dx = x - px
+    let dy = y - py
+
+    if (dx === 0 && dy === 0) {
+      this.dbg = '这是你站的格子'
+      return
+    }
+    if (Math.abs(dx) + Math.abs(dy) !== 1) {
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        dx = dx > 0 ? 1 : -1
+        dy = 0
+      } else {
+        dx = 0
+        dy = dy > 0 ? 1 : -1
+      }
+    }
+    this.step(dx, dy)
+  },
+
+  onDir(dx, dy) {
+    if (this.dialogOn) {
+      return
+    }
+    this.step(dx, dy)
+  },
+
+  step(dx, dy) {
+    const s = getStore()
+
+    // 连点保护：上一次移动 60ms 内不重复处理，避免排队堆积
+    const now = new Date().getTime()
+    if (now - this.lastStepAt < 60) {
+      return
+    }
+    this.lastStepAt = now
+
+    const res = tryMove(world, s.game, dx, dy)
+
+    if (res.reason === 'npc' && res.npc) {
+      this.openDialog(res.npc.name, res.npc.lines)
+      this.dbg = '和' + res.npc.name + '说话'
+      return
+    }
+    if (res.moved) {
+      this.dbg = '走到 (' + s.game.x + ',' + s.game.y + ')'
+      this.steps = s.game.steps
+      this.scheduleRender()
+      return
+    }
+    // 没走动就只更新一行提示，不重建地图
+    this.dbg = res.reason === 'wall'
+      ? '走不通：墙 (' + s.game.x + ',' + s.game.y + ')'
+      : '走不通：边界'
+  },
+
+  openDialog(name, lines) {
+    this.dialogOn = true
+    this.dtitle = name
+    this.dlines = lines || []
+    this.didx = 1
+    this.dcount = this.dlines.length || 1
+    this.dline = this.dlines.length ? this.dlines[0] : ''
+  },
+
+  advance() {
+    if (!this.dialogOn) {
+      return
+    }
+    if (this.didx >= this.dlines.length) {
+      this.dialogOn = false
+      this.dbg = '对话结束'
+      return
+    }
+    this.dline = this.dlines[this.didx]
+    this.didx = this.didx + 1
+  },
+
+  onSave() {
+    this.persist('manual')
+    this.dbg = this.savedOk ? '已存档 gen' + this.savedGen : '存档失败'
+  },
+
+  persist(why) {
+    const s = getStore()
+    const g = s.game
+    if (!g) {
+      return
+    }
+    const d = new Date()
+    const at = ('0' + d.getHours()).slice(-2) + ':' +
+               ('0' + d.getMinutes()).slice(-2) + ':' +
+               ('0' + d.getSeconds()).slice(-2)
+    const payload = {
+      gen: (s.lastSave && s.lastSave.gen) || 0,
+      at: at,
+      mapId: g.mapId,
+      mapName: currentMap(world, g).name,
+      x: g.x,
+      y: g.y,
+      steps: g.steps,
+      facing: g.facing,
+      lv: s.stats.lv,
+      hp: s.stats.hp,
+      hpMax: s.stats.hpMax,
+      mp: s.stats.mp,
+      mpMax: s.stats.mpMax,
+      gold: s.stats.gold
+    }
+    saveGame(storage, payload, (err, gen) => {
+      if (err) {
+        this.savedOk = false
+        this.dbg = '存档失败 ' + err
+      } else {
+        this.savedOk = true
+        this.savedGen = gen
+        s.lastSave = payload
+        s.lastSave.gen = gen
+        if (why === 'manual') {
+          this.dbg = '已存档 gen' + gen + ' · ' + at
+        }
+      }
+    })
+  },
+
+  onBack() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+.page {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  padding: 6px;
+  background-color: #08090b;
+}
+
+.top {
+  width: 100%;
+  height: 30px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.mapname {
+  color: #f2d98c;
+  font-weight: bold;
+}
+
+.steps {
+  color: #7d8492;
+}
+
+.map {
+  width: 396px;
+  height: 324px;
+  background-color: #101218;
+}
+
+.mapimg {
+  position: absolute;
+}
+
+.actor {
+  position: absolute;
+  color: #f5f5f5;
+  font-weight: bold;
+}
+
+.npc {
+  color: #f2d98c;
+}
+
+.glyph {
+  color: #f5f5f5;
+  font-weight: bold;
+}
+
+.pad {
+  width: 100%;
+  height: 40px;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.pbtn {
+  width: 24%;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #1a1c22;
+  justify-content: center;
+  align-items: center;
+}
+
+.pbtn-t {
+  color: #e6e8ec;
+}
+
+.status {
+  width: 100%;
+  height: 24px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.st {
+  color: #a8adb3;
+}
+
+.gold {
+  color: #f2d98c;
+}
+
+.bottom {
+  width: 100%;
+  height: 40px;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.bbtn {
+  width: 49%;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #2a2c33;
+  justify-content: center;
+  align-items: center;
+}
+
+.bbtn-t {
+  color: #e6e8ec;
+}
+
+.dialog {
+  width: 396px;
+  height: 112px;
+  flex-direction: column;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #3a3d47;
+  background-color: #11131a;
+  margin-top: 4px;
+}
+
+.dtitle {
+  color: #f2d98c;
+  margin-bottom: 4px;
+}
+
+.dline {
+  color: #f5f5f5;
+}
+
+.dhint {
+  color: #6b7280;
+  margin-top: auto;
+}
+
+.err {
+  color: #f87171;
+  padding-left: 4px;
+}
+
+.dbg {
+  color: #4b5563;
+  margin-top: 2px;
+  padding-left: 4px;
+}
+</style>

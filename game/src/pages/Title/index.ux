@@ -1,0 +1,268 @@
+<template>
+  <div class="page">
+
+    <div class="head">
+      <text class="t1" style="font-size: 26px">勇者斗恶龙 III</text>
+      <text class="t2" style="font-size: 11px">手表版 · M1 原型</text>
+    </div>
+
+    <div class="savecard">
+      <text class="slabel" style="font-size: 10px">存档</text>
+      <text class="sline" style="font-size: 12px">{{summary}}</text>
+      <text class="sauto" style="font-size: 10px">{{savedLine}}</text>
+    </div>
+
+    <div class="btn main" onclick="onContinue">
+      <text class="btn-t" style="font-size: 16px">{{ctaLabel}}</text>
+    </div>
+
+    <div class="btn ghost" if="{{hasSave}}" onclick="onNew">
+      <text class="ghost-t" style="font-size: 13px">新游戏（覆盖自动存档）</text>
+    </div>
+
+    <div class="spacer"></div>
+
+    <text class="err" if="{{err}}" style="font-size: 10px">{{err}}</text>
+    <text class="hint" style="font-size: 10px">游戏中右滑会回到这一页，并自动存档</text>
+    <text class="boot" style="font-size: 9px">v0.1.1 · 第 {{boot}} 次启动 · {{dbg}}</text>
+
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import storage from '@system.storage'
+import '../../core/store.js'
+import '../../core/save.js'
+import '../../core/game.js'
+import '../../core/world.js'
+
+const storeApi = globalThis.__dq3_store_api || {}
+const saveApi = globalThis.__dq3_save_api || {}
+const gameApi = globalThis.__dq3_game_api || {}
+const world = globalThis.__dq3_world || { maps: {}, startMap: '' }
+
+const { getStore } = storeApi
+const { loadGame, saveGame } = saveApi
+const { newGame, currentMap } = gameApi
+
+export default {
+  private: {
+    hasSave: false,
+    summary: '读取中…',
+    savedLine: '',
+    boot: 0,
+    dbg: '',
+    ctaLabel: '开始游戏',
+    err: ''
+  },
+
+  onInit() {
+    try {
+      const store = getStore()
+      store.boot = store.boot + 1
+      this.boot = store.boot
+      this.dbg = (typeof globalThis !== 'undefined') ? 'shared' : 'local'
+      this.reload()
+    } catch (e) {
+      this.err = 'init: ' + e
+    }
+  },
+
+  onReady() {
+    console.log('[dq3] title ready · ' + this.summary + ' · hasSave=' + this.hasSave)
+  },
+
+  onShow() {
+    try {
+      const store = getStore()
+
+      // 从游戏页右滑回来：进程还活着，此刻写盘来得及
+      if (store.inGame) {
+        store.inGame = false
+        this.autoSave(store)
+      }
+      this.reload()
+    } catch (e) {
+      this.err = 'show: ' + e
+    }
+  },
+
+  reload() {
+    loadGame(storage, (best, broken) => {
+      console.log('[dq3] load -> ' + (best ? 'gen' + best.data.gen : 'none') + ' broken=' + broken)
+      console.log('[dq3] load -> ' + (best ? 'gen' + best.data.gen : 'none') + ' broken=' + broken)
+      const store = getStore()
+      if (best) {
+        const d = best.data
+        store.lastSave = d
+        this.hasSave = true
+        this.ctaLabel = '继续游戏'
+        this.summary = 'Lv' + d.lv + ' · ' + d.mapName + ' · ' + d.steps + ' 步'
+        this.savedLine = '自动存档 gen' + d.gen + ' · ' + d.at
+      } else {
+        store.lastSave = null
+        this.hasSave = false
+        this.ctaLabel = '开始游戏'
+        this.summary = broken ? '两个槽都读不出来' : '还没有存档'
+        this.savedLine = ''
+      }
+    })
+  },
+
+  autoSave(store) {
+    const g = store.game
+    if (!g) {
+      return
+    }
+    const d = new Date()
+    const at = ('0' + d.getHours()).slice(-2) + ':' +
+               ('0' + d.getMinutes()).slice(-2) + ':' +
+               ('0' + d.getSeconds()).slice(-2)
+    const payload = {
+      gen: (store.lastSave && store.lastSave.gen) || 0,
+      at: at,
+      mapId: g.mapId,
+      mapName: currentMap(world, g).name,
+      x: g.x,
+      y: g.y,
+      steps: g.steps,
+      facing: g.facing,
+      lv: store.stats.lv,
+      hp: store.stats.hp,
+      hpMax: store.stats.hpMax,
+      mp: store.stats.mp,
+      mpMax: store.stats.mpMax,
+      gold: store.stats.gold
+    }
+    saveGame(storage, payload, (err, gen) => {
+      if (err) {
+        this.savedLine = '自动存档失败 ' + err
+      } else {
+        this.savedLine = '已自动保存 gen' + gen + ' · ' + at
+        this.reload()
+      }
+    })
+  },
+
+  onContinue() {
+    const store = getStore()
+    const s = store.lastSave
+
+    if (s) {
+      store.game = { mapId: s.mapId, x: s.x, y: s.y, steps: s.steps, facing: s.facing || 'down' }
+      store.stats = { lv: s.lv, hp: s.hp, hpMax: s.hpMax, mp: s.mp, mpMax: s.mpMax, gold: s.gold }
+    } else {
+      store.game = newGame(world)
+    }
+    router.push({ uri: '/game' })
+  },
+
+  onNew() {
+    const store = getStore()
+    store.game = newGame(world)
+    router.push({ uri: '/game' })
+  }
+}
+</script>
+
+<style>
+.page {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  padding: 14px;
+  background-color: #08090b;
+}
+
+.head {
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 18px;
+  margin-bottom: 22px;
+}
+
+.t1 {
+  color: #f2d98c;
+  font-weight: bold;
+}
+
+.t2 {
+  color: #7d8492;
+  margin-top: 6px;
+}
+
+.savecard {
+  width: 100%;
+  flex-direction: column;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #2a2c33;
+  background-color: #12141a;
+  margin-bottom: 16px;
+}
+
+.slabel {
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.sline {
+  color: #e6e8ec;
+  margin-bottom: 4px;
+}
+
+.sauto {
+  color: #6ee7a8;
+}
+
+.btn {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  border-radius: 14px;
+}
+
+.main {
+  height: 62px;
+  background-color: #b45309;
+  margin-bottom: 10px;
+}
+
+.btn-t {
+  color: #fff7ed;
+  font-weight: bold;
+}
+
+.ghost {
+  height: 44px;
+  background-color: #1a1c22;
+  border-width: 1px;
+  border-color: #2a2c33;
+  margin-bottom: 10px;
+}
+
+.ghost-t {
+  color: #a8adb3;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.err {
+  color: #f87171;
+  margin-bottom: 6px;
+}
+
+.hint {
+  color: #6b7280;
+}
+
+.boot {
+  color: #3f4550;
+  margin-top: 4px;
+}
+</style>

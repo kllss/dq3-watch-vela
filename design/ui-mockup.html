@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勇者斗恶龙 III · 手表版 · UI Design v0.1</title>
+<style>
+  :root{
+    --bg:#0B0B0F;
+    --panel:#16161C;
+    --panel2:#1E1E26;
+    --line:#2A2A33;
+    --text:#F2F2F5;
+    --sub:#A0A0AA;
+    --gold:#E8C06A;
+    --hp:#6FD08C;
+    --mp:#6FA8FF;
+    --danger:#FF6B6B;
+
+    --grass:#1E3A2A;
+    --tree:#1E4A2A;
+    --tree-t:#7FD08C;
+    --wall:#2A2A33;
+    --water:#102A44;
+    --water-t:#6FA8FF;
+    --road:#3A3428;
+    --floor:#24242C;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#F2F2F4;
+    color:#1A1A1E;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page-head{
+    max-width:1000px;
+    margin:0 auto;
+    padding:36px 24px 8px;
+  }
+  .page-head h1{
+    margin:0 0 6px;
+    font-size:26px;
+    letter-spacing:.02em;
+    font-weight:700;
+  }
+  .page-head p{
+    margin:0;
+    color:#666;
+    font-size:13px;
+    line-height:1.6;
+  }
+  .controls{
+    display:flex;
+    gap:8px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .controls button{
+    appearance:none;
+    border:1px solid #D8D8DE;
+    background:#fff;
+    color:#333;
+    border-radius:999px;
+    padding:7px 14px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .controls button.on{
+    background:#1A1A1E;
+    color:#fff;
+    border-color:#1A1A1E;
+  }
+  .tabs{
+    position:sticky;
+    top:0;
+    z-index:50;
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding:12px 24px;
+    margin-top:16px;
+    background:rgba(242,242,244,.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid #E2E2E6;
+  }
+  .tabs a{
+    flex:0 0 auto;
+    text-decoration:none;
+    color:#555;
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:8px;
+    border:1px solid transparent;
+  }
+  .tabs a:hover{
+    border-color:#D8D8DE;
+    background:#fff;
+    color:#111;
+  }
+
+  .gallery{
+    max-width:1000px;
+    margin:0 auto;
+    padding:34px 24px 80px;
+    display:grid;
+    grid-template-columns:repeat(2,448px);
+    gap:44px 32px;
+    justify-content:center;
+  }
+  @media (max-width:980px){
+    .gallery{grid-template-columns:448px; padding-left:12px; padding-right:12px;}
+  }
+
+  .device{margin:0;scroll-margin-top:70px;}
+  .bezel{
+    position:relative;
+    width:448px;
+    height:530px;
+    padding:8px;
+    border-radius:44px;
+    background:#0A0A0C;
+    box-shadow:0 18px 45px rgba(0,0,0,.18), inset 0 0 0 1px #2A2A30;
+  }
+  .bezel::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    bottom:3px;
+    width:90px;
+    height:3px;
+    margin-left:-45px;
+    border-radius:3px;
+    background:#2A2A30;
+  }
+  .crown{
+    position:absolute;
+    right:-9px;
+    top:150px;
+    width:9px;
+    height:64px;
+    border-radius:0 6px 6px 0;
+    background:linear-gradient(180deg,#4A4A52,#222228);
+  }
+  .crown::after{
+    content:"";
+    position:absolute;
+    left:1px;
+    top:8px;
+    width:2px;
+    height:48px;
+    border-radius:2px;
+    background:rgba(255,255,255,.10);
+  }
+
+  .screen{
+    position:relative;
+    width:432px;
+    height:514px;
+    border-radius:36px;
+    overflow:hidden;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    padding:12px;
+  }
+  .screen.flush{padding:0;}
+
+  figcaption{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:12px;
+    font-size:12px;
+    color:#555;
+    line-height:1.5;
+  }
+  figcaption b{color:#1A1A1E;font-weight:600;}
+  figcaption span{color:#777;text-align:right;}
+
+  /* ---------- shared ---------- */
+  .topbar{
+    height:44px;
+    flex:0 0 44px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .topbar .center{
+    flex:1;
+    text-align:center;
+    font-size:14px;
+    letter-spacing:.02em;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .topbar .right{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--sub);
+  }
+  .iconbtn{
+    height:36px;
+    min-width:52px;
+    padding:0 10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .iconbtn.ghost{
+    background:transparent;
+    border-color:transparent;
+    color:var(--sub);
+  }
+  .gold{color:var(--gold);}
+  .sub{color:var(--sub);}
+  .danger{color:var(--danger);}
+  .hp{color:var(--hp);}
+  .mp{color:var(--mp);}
+
+  .bar{
+    height:4px;
+    border-radius:4px;
+    background:#24242C;
+    overflow:hidden;
+  }
+  .bar i{
+    display:block;
+    height:100%;
+    border-radius:4px;
+    background:var(--hp);
+  }
+  .bar.mp i{background:var(--mp);}
+
+  /* ---------- 01 title ---------- */
+  .title-screen{
+    justify-content:space-between;
+    align-items:stretch;
+    background:
+      radial-gradient(220px 140px at 50% 28%, rgba(232,192,106,.10), transparent 70%),
+      var(--bg);
+  }
+  .stars{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:.55;
+  }
+  .stars i{
+    position:absolute;
+    width:2px;
+    height:2px;
+    background:#8A8A96;
+  }
+  .title-main{
+    margin-top:74px;
+    text-align:center;
+    position:relative;
+    z-index:2;
+  }
+  .kicker{
+    font-size:10px;
+    letter-spacing:.34em;
+    color:var(--sub);
+    margin-bottom:12px;
+  }
+  .title-main h2{
+    margin:0;
+    font-size:34px;
+    line-height:1.18;
+    font-weight:700;
+    color:var(--gold);
+    letter-spacing:.04em;
+    text-shadow:0 2px 0 rgba(0,0,0,.55);
+  }
+  .title-main h2 span{
+    display:inline-block;
+    margin-left:4px;
+    padding:0 7px;
+    border:1px solid rgba(232,192,106,.55);
+    border-radius:6px;
+    font-size:26px;
+    vertical-align:2px;
+  }
+  .title-sub{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--sub);
+    letter-spacing:.16em;
+  }
+  .title-menu{
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:0 46px;
+    margin-bottom:16px;
+  }
+  .big-btn{
+    height:56px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px;
+    font-size:16px;
+    color:var(--text);
+  }
+  .big-btn.primary{
+    background:#2A2417;
+    border-color:rgba(232,192,106,.55);
+    color:var(--gold);
+  }
+  .big-btn.ghost{
+    background:transparent;
+    color:var(--sub);
+  }
+  .big-btn .hint{
+    font-size:11px;
+    color:var(--sub);
+  }
+  .title-foot{
+    text-align:center;
+    font-size:10px;
+    color:#6A6A76;
+    margin-bottom:18px;
+    letter-spacing:.04em;
+  }
+
+  /* ---------- 02 field ---------- */
+  .map{
+    display:grid;
+    width:396px;
+    height:324px;
+    margin:0 auto;
+    flex:0 0 324px;
+    border-radius:10px;
+    overflow:hidden;
+    background:#111118;
+  }
+  .tile{
+    width:36px;
+    height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:17px;
+    line-height:1;
+    user-select:none;
+  }
+  .tile.wall{background:var(--wall);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
+  .tile.grass{background:var(--grass);position:relative;}
+  .tile.grass::after{
+    content:"";
+    width:2px;height:2px;border-radius:50%;
+    background:rgba(255,255,255,.10);
+  }
+  .tile.tree{background:var(--tree);color:var(--tree-t);font-weight:700;}
+  .tile.water{background:var(--water);color:var(--water-t);}
+  .tile.road{background:var(--road);}
+  .tile.player{
+    background:var(--gold);
+    color:#1A1A1E;
+    font-weight:800;
+    border-radius:50%;
+    box-shadow:0 0 0 2px rgba(232,192,106,.25);
+    transform:scale(.86);
+  }
+  .tile.npc{
+    background:#24405C;
+    color:#BFE0FF;
+    font-weight:700;
+    border-radius:8px;
+    transform:scale(.88);
+    box-shadow:inset 0 0 0 1px rgba(191,224,255,.18);
+  }
+
+  .statusbar{
+    height:40px;
+    flex:0 0 40px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:0 4px;
+    font-size:11px;
+    color:var(--sub);
+  }
+  .statusbar .cell{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+  }
+  .statusbar .v{color:var(--text);font-size:12px;white-space:nowrap;}
+  .statusbar .bar{width:56px;}
+
+  .hintline{
+    height:24px;
+    flex:0 0 24px;
+    display:flex;
+    align-items:center;
+    padding:0 4px;
+    font-size:11px;
+    color:#8A8A96;
+  }
+  .actionbar{
+    height:56px;
+    flex:0 0 56px;
+    display:flex;
+    gap:8px;
+  }
+  .actionbar .btn{
+    flex:1;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    color:var(--text);
+  }
+  .actionbar .btn.primary{
+    background:#2A2417;
+    border-color:rgba(232,192,106,.45);
+    color:var(--gold);
+  }
+
+  /* ---------- 03 dialog ---------- */
+  .map-peek{
+    position:absolute;
+    left:0;
+    top:0;
+    width:432px;
+    height:190px;
+    overflow:hidden;
+    opacity:.55;
+  }
+  .map-peek .map{
+    margin:0 auto;
+    border-radius:0;
+    height:180px;
+    flex:none;
+  }
+  .dim{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg,rgba(11,11,15,.15) 0%,rgba(11,11,15,.72) 58%,rgba(11,11,15,.94) 100%);
+  }
+  .dialog-sheet{
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:12px;
+    height:306px;
+    border-radius:18px;
+    border:1px solid var(--line);
+    background:rgba(16,16,22,.97);
+    padding:14px 16px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+  }
+  .speaker{
+    font-size:14px;
+    color:var(--gold);
+    letter-spacing:.06em;
+    margin-bottom:8px;
+  }
+  .dialog-text{
+    flex:1;
+    font-size:18px;
+    line-height:28px;
+    letter-spacing:.02em;
+    color:var(--text);
+  }
+  .dialog-text .dimtext{color:var(--sub);}
+  .next{
+    position:absolute;
+    right:18px;
+    bottom:88px;
+    font-size:13px;
+    color:var(--gold);
+  }
+  .choices{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+  }
+  .choice{
+    flex:1;
+    height:52px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+  }
+  .choice.primary{
+    background:#2A2417;
+    border-color:rgba(232,192,106,.55);
+    color:var(--gold);
+  }
+
+  /* ---------- 04 menu ---------- */
+  .menu-grid{
+    display:grid;
+    grid-template-columns:repeat(2,180px);
+    grid-auto-rows:96px;
+    gap:12px;
+    justify-content:center;
+    margin-top:6px;
+  }
+  .menu-tile{
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:12px 14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .menu-tile .ico{
+    font-size:20px;
+    color:var(--gold);
+    letter-spacing:.04em;
+  }
+  .menu-tile .name{font-size:16px;}
+  .menu-tile .desc{font-size:10px;color:var(--sub);}
+  .goal-card{
+    margin-top:14px;
+    border-radius:12px;
+    border:1px dashed rgba(232,192,106,.30);
+    background:rgba(232,192,106,.05);
+    padding:10px 12px;
+    font-size:11px;
+    line-height:1.6;
+    color:var(--sub);
+  }
+  .goal-card b{color:var(--gold);font-weight:600;}
+  .menu-foot{
+    margin-top:auto;
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--sub);
+    padding:0 4px;
+  }
+
+  /* ---------- 05 status ---------- */
+  .hpmp{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:4px;
+  }
+  .hpmp .box{
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:10px 12px;
+  }
+  .hpmp .lab{font-size:10px;color:var(--sub);letter-spacing:.12em;}
+  .hpmp .num{font-size:22px;margin:2px 0 5px;}
+  .hpmp .num small{font-size:11px;color:var(--sub);}
+  .statgrid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-top:10px;
+  }
+  .stat{
+    border-radius:10px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:7px 10px;
+  }
+  .stat .k{font-size:9px;color:var(--sub);letter-spacing:.10em;}
+  .stat .v{font-size:15px;margin-top:1px;}
+  .equip{
+    margin-top:10px;
+    border-top:1px solid var(--line);
+  }
+  .equip-row{
+    height:36px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border-bottom:1px solid var(--line);
+    font-size:12px;
+  }
+  .equip-row .slot{width:42px;color:var(--sub);font-size:10px;}
+  .equip-row .item{flex:1;color:var(--text);}
+  .equip-row .plus{color:var(--hp);font-size:11px;}
+  .expbar{
+    margin-top:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:10px;
+    color:var(--sub);
+  }
+  .expbar .bar{flex:1;height:5px;}
+  .pager{
+    margin-top:auto;
+    display:flex;
+    gap:10px;
+  }
+  .pager .btn{
+    flex:1;
+    height:52px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+  }
+
+  /* ---------- 06 battle ---------- */
+  .enemies{
+    height:190px;
+    flex:0 0 190px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    border-radius:12px;
+    background:#101016;
+    border:1px solid var(--line);
+    margin-top:2px;
+  }
+  .enemy-card{
+    width:118px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:8px;
+    text-align:center;
+  }
+  .enemy-card .art{
+    height:72px;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:.08em;
+    color:#DFFFE8;
+    background:#1B3A2A;
+    margin-bottom:6px;
+  }
+  .enemy-card .nm{font-size:12px;}
+  .enemy-card .st{font-size:10px;color:var(--sub);margin-top:2px;}
+  .enemy-card.hurt .st{color:var(--gold);}
+  .battle-msg{
+    height:48px;
+    flex:0 0 48px;
+    display:flex;
+    align-items:center;
+    padding:0 6px;
+    font-size:14px;
+    color:var(--text);
+  }
+  .party{
+    flex:0 0 144px;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+  .party-row{
+    height:36px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    border-bottom:1px solid rgba(42,42,51,.55);
+  }
+  .party-row .nm{width:46px;color:var(--text);}
+  .party-row .hpnum{width:62px;text-align:right;color:var(--hp);font-size:11px;}
+  .party-row .mpnum{width:48px;text-align:right;color:var(--mp);font-size:10px;}
+  .party-row .bar{flex:1;height:4px;}
+  .commands{
+    margin-top:auto;
+    display:flex;
+    gap:6px;
+    height:52px;
+    flex:0 0 52px;
+  }
+  .cmd{
+    flex:1;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    color:var(--text);
+  }
+  .cmd.primary{
+    background:#2A2417;
+    border-color:rgba(232,192,106,.50);
+    color:var(--gold);
+  }
+  .cmd.disabled{color:#5C5C66;}
+
+  /* ---------- 07 target ---------- */
+  .target-list{
+    margin-top:4px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .target-row{
+    height:52px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 12px;
+    font-size:13px;
+  }
+  .target-row.sel{
+    border-color:rgba(232,192,106,.75);
+    background:#2A2417;
+    box-shadow:0 0 0 1px rgba(232,192,106,.18) inset;
+  }
+  .target-row .mark{color:var(--gold);width:14px;}
+  .target-row .nm{flex:1;}
+  .target-row .cnt{color:var(--sub);font-size:11px;}
+  .target-row .st{font-size:10px;color:var(--gold);}
+  .target-hint{
+    height:32px;
+    display:flex;
+    align-items:center;
+    font-size:10px;
+    color:var(--sub);
+    padding:0 4px;
+  }
+
+  /* ---------- 08 shop ---------- */
+  .shop-list{
+    margin-top:4px;
+    border-top:1px solid var(--line);
+  }
+  .shop-row{
+    height:58px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-bottom:1px solid var(--line);
+    padding:0 6px;
+  }
+  .shop-row .nm{flex:1;font-size:14px;}
+  .shop-row .price{font-size:13px;color:var(--gold);width:78px;text-align:right;}
+  .shop-row .delta{font-size:11px;color:var(--hp);width:64px;text-align:right;}
+  .shop-row.sel{
+    background:#2A2417;
+    border-radius:10px;
+    border-bottom-color:transparent;
+    box-shadow:inset 0 0 0 1px rgba(232,192,106,.45);
+  }
+  .shop-detail{
+    margin-top:10px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:9px 12px;
+    font-size:11px;
+    line-height:1.6;
+    color:var(--sub);
+  }
+  .shop-detail b{color:var(--text);font-weight:600;}
+  .shop-foot{
+    margin-top:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .shop-foot .money{flex:1;font-size:13px;color:var(--gold);}
+  .shop-foot .buy{
+    width:132px;height:52px;border-radius:12px;
+    background:#2A2417;border:1px solid rgba(232,192,106,.55);
+    color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:14px;
+  }
+
+  /* ---------- 09 save ---------- */
+  .save-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .save-row{
+    height:70px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 12px;
+  }
+  .save-row .slot{width:52px;font-size:10px;color:var(--sub);letter-spacing:.06em;}
+  .save-row .info{flex:1;min-width:0;}
+  .save-row .t1{font-size:13px;}
+  .save-row .t2{font-size:10px;color:var(--sub);margin-top:3px;}
+  .save-row .ok{color:var(--hp);font-size:11px;}
+  .save-row.corrupt{border-color:rgba(255,107,107,.55);background:rgba(255,107,107,.06);}
+  .save-row.corrupt .ok{color:var(--danger);}
+  .save-note{
+    margin-top:10px;
+    font-size:10px;
+    line-height:1.6;
+    color:var(--sub);
+    padding:0 4px;
+  }
+  .save-actions{
+    margin-top:auto;
+    display:flex;
+    gap:8px;
+  }
+  .save-actions .btn{
+    flex:1;height:52px;border-radius:12px;
+    border:1px solid var(--line);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+  }
+  .save-actions .btn.primary{
+    background:#2A2417;border-color:rgba(232,192,106,.50);color:var(--gold);
+  }
+
+  /* ---------- 10 pause ---------- */
+  .pause-list{
+    margin-top:4px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .pause-row{
+    height:54px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 16px;
+    font-size:15px;
+  }
+  .pause-row .hint{font-size:10px;color:var(--sub);}
+  .pause-row.danger{color:var(--danger);border-color:rgba(255,107,107,.28);}
+  .notes-card{
+    margin-top:12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#101016;
+    padding:12px;
+  }
+  .notes-card .ttl{font-size:10px;color:var(--gold);letter-spacing:.12em;margin-bottom:6px;}
+  .notes-card ul{margin:0;padding-left:14px;}
+  .notes-card li{font-size:11px;line-height:1.8;color:var(--sub);}
+  .pause-foot{
+    margin-top:auto;
+    text-align:center;
+    font-size:9px;
+    color:#5C5C66;
+  }
+
+  /* ---------- overlays ---------- */
+  body.grid .screen::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:40;
+    background-image:
+      linear-gradient(rgba(255,80,80,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,80,80,.08) 1px, transparent 1px);
+    background-size:12px 12px;
+  }
+  body.notes .topbar,
+  body.notes .map,
+  body.notes .statusbar,
+  body.notes .actionbar,
+  body.notes .dialog-sheet,
+  body.notes .menu-grid,
+  body.notes .hpmp,
+  body.notes .statgrid,
+  body.notes .equip,
+  body.notes .enemies,
+  body.notes .party,
+  body.notes .commands,
+  body.notes .target-list,
+  body.notes .shop-list,
+  body.notes .save-list,
+  body.notes .pause-list{
+    outline:1px dashed rgba(255,80,80,.55);
+    outline-offset:-1px;
+  }
+  body.contrast{
+    --sub:#D2D2DC;
+    --line:#5A5A66;
+  }
+
+  .lightbox{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(10,10,14,.78);
+    padding:24px;
+  }
+  .lightbox.open{display:flex;}
+  .lightbox .lb-inner{
+    position:relative;
+    transform:scale(1.18);
+    transform-origin:center;
+  }
+  .lb-close{
+    position:absolute;
+    right:-40px;
+    top:-40px;
+    width:34px;height:34px;
+    border-radius:50%;
+    border:1px solid #444;
+    background:#1A1A1E;
+    color:#fff;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .lb-cap{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:-46px;
+    text-align:center;
+    color:#DDD;
+    font-size:12px;
+  }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>勇者斗恶龙 III · 手表版</h1>
+  <p>UI Design v0.1 · REDMI Watch 6 · 432 × 514 · 11×9 地图 · 触屏优先 / 表冠只用于菜单<br>
+     这是设计稿，不是可运行 RPK；尺寸与文案用于评审，最终以真机渲染为准。</p>
+  <div class="controls">
+    <button data-toggle="grid" class="on">12px 网格</button>
+    <button data-toggle="notes">结构标注</button>
+    <button data-toggle="contrast">高对比</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <a href="#s01">01 标题</a>
+  <a href="#s02">02 地图</a>
+  <a href="#s03">03 对话</a>
+  <a href="#s04">04 菜单</a>
+  <a href="#s05">05 状态</a>
+  <a href="#s06">06 战斗</a>
+  <a href="#s07">07 选敌</a>
+  <a href="#s08">08 商店</a>
+  <a href="#s09">09 存档</a>
+  <a href="#s10">10 暂停</a>
+</nav>
+
+<main class="gallery">
+
+  <!-- 01 title -->
+  <figure class="device" id="s01">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen title-screen">
+        <div class="stars">
+          <i style="left:56px;top:70px"></i><i style="left:120px;top:52px"></i>
+          <i style="left:368px;top:86px"></i><i style="left:330px;top:148px"></i>
+          <i style="left:82px;top:190px"></i><i style="left:380px;top:238px"></i>
+          <i style="left:46px;top:300px"></i><i style="left:300px;top:330px"></i>
+        </div>
+        <div class="title-main">
+          <div class="kicker">DRAGON QUEST III</div>
+          <h2>勇者斗恶龙 <span>III</span></h2>
+          <div class="title-sub">手表版 · 传说之始</div>
+        </div>
+        <div class="title-menu">
+          <div class="big-btn primary">继续<span class="hint">Lv12 · 阿利亚罕</span></div>
+          <div class="big-btn">新游戏</div>
+          <div class="big-btn ghost">设置</div>
+        </div>
+        <div class="title-foot">自动存档 00:42 · v0.1 设计稿</div>
+      </div>
+    </div>
+    <figcaption><b>01 标题 / 继续</b><span>432×514 · 主按钮 56 高</span></figcaption>
+  </figure>
+
+  <!-- 02 field -->
+  <figure class="device" id="s02">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">暂停</div>
+          <div class="center">阿利亚罕平原</div>
+          <div class="right"><span>白天</span><span class="gold">128G</span></div>
+        </div>
+        <div class="map" data-map="field"></div>
+        <div class="statusbar">
+          <div class="cell"><span class="v hp">HP 34/34</span><div class="bar"><i style="width:100%"></i></div></div>
+          <div class="cell"><span class="v mp">MP 6/6</span><div class="bar mp"><i style="width:100%"></i></div></div>
+          <div class="cell"><span class="v">Lv 3</span></div>
+          <div class="cell"><span class="v">EXP 128</span></div>
+        </div>
+        <div class="hintline">草丛里传来沙沙声…</div>
+        <div class="actionbar">
+          <div class="btn primary">菜单</div>
+          <div class="btn">说话</div>
+          <div class="btn">调查</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>02 地图 / 探索</b><span>11×9 · 36px/格 · 点相邻格移动</span></figcaption>
+  </figure>
+
+  <!-- 03 dialog -->
+  <figure class="device" id="s03">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen flush dialog-screen">
+        <div class="map-peek"><div class="map" data-map="dialog"></div></div>
+        <div class="dim"></div>
+        <div class="iconbtn ghost" style="position:absolute;left:14px;top:12px;z-index:3">‹ 返回</div>
+        <div class="dialog-sheet">
+          <div class="speaker">国王</div>
+          <div class="dialog-text">
+            勇者啊，你终于来了。<br>
+            巴拉莫斯的手下正在北方肆虐，<br>
+            你必须尽快出发。
+          </div>
+          <div class="next">▼</div>
+          <div class="choices">
+            <div class="choice primary">是</div>
+            <div class="choice">否</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>03 对话 / 选择</b><span>3 行 × 20 字 · 按钮 52 高</span></figcaption>
+  </figure>
+
+  <!-- 04 menu -->
+  <figure class="device" id="s04">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 返回</div>
+          <div class="center">菜单</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="menu-grid">
+          <div class="menu-tile"><div class="ico">状</div><div><div class="name">状态</div><div class="desc">属性 / 装备 / 经验</div></div></div>
+          <div class="menu-tile"><div class="ico">装</div><div><div class="name">装备</div><div class="desc">武器 / 防具 / 盾 / 头盔</div></div></div>
+          <div class="menu-tile"><div class="ico">道</div><div><div class="name">道具</div><div class="desc">使用 / 丢弃 / 袋子</div></div></div>
+          <div class="menu-tile"><div class="ico">魔</div><div><div class="name">魔法</div><div class="desc">攻击 / 回复 / 辅助</div></div></div>
+          <div class="menu-tile"><div class="ico">队</div><div><div class="name">队伍</div><div class="desc">顺序 / 离队 / 加入</div></div></div>
+          <div class="menu-tile"><div class="ico">存</div><div><div class="name">存档</div><div class="desc">自动 / 手动 1–3</div></div></div>
+        </div>
+        <div class="goal-card"><b>当前目标</b>：前往阿利亚罕城觐见国王</div>
+        <div class="menu-foot"><span>金币 128G</span><span>游戏时间 00:42</span></div>
+      </div>
+    </div>
+    <figcaption><b>04 主菜单</b><span>2×3 瓦片 · 180×96 · 表冠/点击</span></figcaption>
+  </figure>
+
+  <!-- 05 status -->
+  <figure class="device" id="s05">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 返回</div>
+          <div class="center">勇者　Lv 12</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="hpmp">
+          <div class="box"><div class="lab">HP</div><div class="num hp">86<small> / 86</small></div><div class="bar"><i style="width:100%"></i></div></div>
+          <div class="box"><div class="lab">MP</div><div class="num mp">24<small> / 24</small></div><div class="bar mp"><i style="width:100%"></i></div></div>
+        </div>
+        <div class="statgrid">
+          <div class="stat"><div class="k">力量</div><div class="v">42</div></div>
+          <div class="stat"><div class="k">敏捷</div><div class="v">31</div></div>
+          <div class="stat"><div class="k">防御</div><div class="v">38</div></div>
+          <div class="stat"><div class="k">智力</div><div class="v">18</div></div>
+          <div class="stat"><div class="k">运气</div><div class="v">12</div></div>
+          <div class="stat"><div class="k">性格</div><div class="v" style="font-size:12px;padding-top:3px">勇敢</div></div>
+        </div>
+        <div class="equip">
+          <div class="equip-row"><span class="slot">武器</span><span class="item">钢剑</span><span class="plus">+28</span></div>
+          <div class="equip-row"><span class="slot">防具</span><span class="item">铁甲</span><span class="plus">+22</span></div>
+          <div class="equip-row"><span class="slot">盾</span><span class="item">铁盾</span><span class="plus">+12</span></div>
+          <div class="equip-row"><span class="slot">头盔</span><span class="item" style="color:#6A6A76">—</span><span class="plus" style="color:#6A6A76">+0</span></div>
+        </div>
+        <div class="expbar"><span>EXP 12,480</span><div class="bar"><i style="width:64%"></i></div><span>下级 14,200</span></div>
+        <div class="pager"><div class="btn">上一人</div><div class="btn">下一人</div></div>
+      </div>
+    </div>
+    <figcaption><b>05 状态</b><span>HP/MP 76 · 属性 3×2 · 装备 4 行</span></figcaption>
+  </figure>
+
+  <!-- 06 battle -->
+  <figure class="device" id="s06">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 撤退</div>
+          <div class="center">战斗　第 2 回合</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="enemies">
+          <div class="enemy-card hurt"><div class="art">史莱</div><div class="nm">史莱姆 ×2</div><div class="st">受伤</div></div>
+          <div class="enemy-card"><div class="art" style="background:#2A1B3A;color:#E8C8FF">蝙蝠</div><div class="nm">大蝙蝠 ×1</div><div class="st">正常</div></div>
+          <div class="enemy-card"><div class="art" style="background:#3A2A1B;color:#FFE0B0">兽人</div><div class="nm">兽人 ×1</div><div class="st">正常</div></div>
+        </div>
+        <div class="battle-msg">史莱姆小组出现了！</div>
+        <div class="party">
+          <div class="party-row"><span class="nm">勇者</span><span class="hpnum">86/86</span><span class="mpnum">24/24</span><div class="bar"><i style="width:100%"></i></div></div>
+          <div class="party-row"><span class="nm">战士</span><span class="hpnum">92/92</span><span class="mpnum">0/0</span><div class="bar"><i style="width:100%"></i></div></div>
+          <div class="party-row"><span class="nm">法师</span><span class="hpnum">48/48</span><span class="mpnum">18/18</span><div class="bar mp"><i style="width:100%"></i></div></div>
+          <div class="party-row"><span class="nm">僧侣</span><span class="hpnum">55/55</span><span class="mpnum">16/16</span><div class="bar mp"><i style="width:100%"></i></div></div>
+        </div>
+        <div class="commands">
+          <div class="cmd primary">攻击</div>
+          <div class="cmd">咒文</div>
+          <div class="cmd">防御</div>
+          <div class="cmd">道具</div>
+          <div class="cmd disabled">逃走</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>06 战斗 / 指令</b><span>敌 190 · 消息 48 · 队伍 144 · 指令 52</span></figcaption>
+  </figure>
+
+  <!-- 07 target -->
+  <figure class="device" id="s07">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 返回</div>
+          <div class="center">选择目标</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="enemies" style="height:150px;flex:0 0 150px">
+          <div class="enemy-card"><div class="art" style="height:52px">史莱</div><div class="nm">史莱姆 ×2</div></div>
+          <div class="enemy-card"><div class="art" style="height:52px;background:#2A1B3A;color:#E8C8FF">蝙蝠</div><div class="nm">大蝙蝠 ×1</div></div>
+        </div>
+        <div class="battle-msg" style="height:40px;flex:0 0 40px">攻击哪一组？</div>
+        <div class="target-list">
+          <div class="target-row sel"><span class="mark">▶</span><span class="nm">史莱姆 ×2</span><span class="cnt">剩余 2</span><span class="st">受伤</span></div>
+          <div class="target-row"><span class="mark"></span><span class="nm">大蝙蝠 ×1</span><span class="cnt">剩余 1</span><span class="st">正常</span></div>
+        </div>
+        <div class="target-hint">点一行选目标；只有一组时自动选中</div>
+        <div class="commands" style="height:48px;flex:0 0 48px">
+          <div class="cmd" style="flex:1">取消</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>07 战斗 / 选敌</b><span>按组选择 · 52 行高 · 单组自动选中</span></figcaption>
+  </figure>
+
+  <!-- 08 shop -->
+  <figure class="device" id="s08">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 返回</div>
+          <div class="center">武器店</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="shop-list">
+          <div class="shop-row"><span class="nm">铜剑</span><span class="price">120G</span><span class="delta">+12</span></div>
+          <div class="shop-row sel"><span class="nm">铁枪</span><span class="price">380G</span><span class="delta">+20</span></div>
+          <div class="shop-row"><span class="nm">钢剑</span><span class="price">1,200G</span><span class="delta">+28</span></div>
+          <div class="shop-row"><span class="nm">铁斧</span><span class="price">2,400G</span><span class="delta">+36</span></div>
+          <div class="shop-row"><span class="nm" style="color:#6A6A76">锁子甲</span><span class="price" style="color:#6A6A76">—</span><span class="delta" style="color:#6A6A76">不可装备</span></div>
+        </div>
+        <div class="shop-detail"><b>铁枪</b> · 攻击 +20<br>可装备：勇者 / 战士 / 僧侣</div>
+        <div class="shop-foot"><span class="money">持有 128G</span><div class="buy">购买</div></div>
+      </div>
+    </div>
+    <figcaption><b>08 商店</b><span>行 58 · 选中金边 · 装备对比</span></figcaption>
+  </figure>
+
+  <!-- 09 save -->
+  <figure class="device" id="s09">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn">‹ 返回</div>
+          <div class="center">存档</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="save-list">
+          <div class="save-row"><span class="slot">自动</span><div class="info"><div class="t1">Lv 12 · 阿利亚罕</div><div class="t2">00:42 · 2026-10-25 13:20</div></div><span class="ok">✓</span></div>
+          <div class="save-row"><span class="slot">存档 1</span><div class="info"><div class="t1">Lv 10 · 罗玛利亚</div><div class="t2">00:31 · 2026-10-24 22:08</div></div><span class="ok">✓</span></div>
+          <div class="save-row"><span class="slot">存档 2</span><div class="info"><div class="t1" style="color:#6A6A76">— 空 —</div><div class="t2">可写入</div></div><span class="ok" style="color:#5C5C66">·</span></div>
+          <div class="save-row corrupt"><span class="slot">存档 3</span><div class="info"><div class="t1">Lv 9 · 波特加</div><div class="t2 danger">校验失败，可回退到自动存档</div></div><span class="ok">!</span></div>
+        </div>
+        <div class="save-note">自动存档在战斗结束/切换地图/商店交易后写入；手动存档在教堂或国王处写入。</div>
+        <div class="save-actions">
+          <div class="btn primary">保存到 1</div>
+          <div class="btn">读取</div>
+          <div class="btn">删除</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>09 存档</b><span>自动 + 3 手动 · 损坏态可见</span></figcaption>
+  </figure>
+
+  <!-- 10 pause -->
+  <figure class="device" id="s10">
+    <div class="bezel">
+      <div class="crown"></div>
+      <div class="screen">
+        <div class="topbar">
+          <div class="iconbtn ghost">‹ 返回</div>
+          <div class="center">暂停</div>
+          <div style="width:52px"></div>
+        </div>
+        <div class="pause-list">
+          <div class="pause-row">继续<span class="hint">回到地图</span></div>
+          <div class="pause-row">冒险笔记<span class="hint">最近 5 条</span></div>
+          <div class="pause-row">设置<span class="hint">速度 / 对比度</span></div>
+          <div class="pause-row danger">回标题<span class="hint">长按确认</span></div>
+        </div>
+        <div class="notes-card">
+          <div class="ttl">最近线索</div>
+          <ul>
+            <li>国王说北方有巴拉莫斯的手下。</li>
+            <li>武器店老板提到东边有个洞窟。</li>
+            <li>港口的船长在等黑胡椒。</li>
+          </ul>
+        </div>
+        <div class="pause-foot">长按 600ms 回标题 · 自动存档已写入</div>
+      </div>
+    </div>
+    <figcaption><b>10 暂停 / 笔记</b><span>软件暂停 · 不依赖返回键</span></figcaption>
+  </figure>
+
+</main>
+
+<div class="lightbox" id="lightbox">
+  <div class="lb-inner">
+    <button class="lb-close" id="lbClose">×</button>
+    <div id="lbContent"></div>
+    <div class="lb-cap" id="lbCap"></div>
+  </div>
+</div>
+
+<script>
+  // ---------- maps ----------
+  const TILES = {
+    '#': 'wall', '.': 'grass', 'T': 'tree', '~': 'water',
+    ',': 'road', '@': 'player', 'K': 'npc', 'D': 'door'
+  };
+
+  const MAPS = {
+    field: [
+      '###########',
+      '#....T....#',
+      '#..T...K..#',
+      '#.........#',
+      '#....@....#',
+      '#.........#',
+      '#..~~~....#',
+      '#....,....#',
+      '###########'
+    ],
+    dialog: [
+      '...........',
+      '..T.....T..',
+      '...........',
+      '....K......',
+      '...........'
+    ]
+  };
+
+  function renderMap(el) {
+    const rows = MAPS[el.dataset.map] || MAPS.field;
+    const cols = rows[0].length;
+    el.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
+    el.style.gridTemplateRows = `repeat(${rows.length}, 36px)`;
+    el.innerHTML = '';
+    for (const row of rows) {
+      for (const ch of row) {
+        const d = document.createElement('div');
+        d.className = 'tile ' + (TILES[ch] || 'grass');
+        if (ch === '@' || ch === 'K' || ch === 'T' || ch === '~') {
+          d.textContent = ch;
+        }
+        el.appendChild(d);
+      }
+    }
+  }
+  document.querySelectorAll('[data-map]').forEach(renderMap);
+
+  // ---------- toggles ----------
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.toggle;
+      const cls = key === 'grid' ? 'grid' : key === 'notes' ? 'notes' : 'contrast';
+      document.body.classList.toggle(cls);
+      btn.classList.toggle('on');
+    });
+  });
+
+  // ---------- lightbox ----------
+  const lb = document.getElementById('lightbox');
+  const lbContent = document.getElementById('lbContent');
+  const lbCap = document.getElementById('lbCap');
+
+  document.querySelectorAll('.device').forEach(device => {
+    device.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      const bezel = device.querySelector('.bezel').cloneNode(true);
+      const cap = device.querySelector('figcaption')?.innerText || '';
+      lbContent.innerHTML = '';
+      lbContent.appendChild(bezel);
+      lbCap.textContent = cap;
+      lb.classList.add('open');
+    });
+  });
+
+  function closeLb() {
+    lb.classList.remove('open');
+    lbContent.innerHTML = '';
+  }
+  document.getElementById('lbClose').addEventListener('click', closeLb);
+  lb.addEventListener('click', (e) => { if (e.target === lb) closeLb(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+</script>
+</body>
+</html>

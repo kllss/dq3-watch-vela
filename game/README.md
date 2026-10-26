@@ -42,6 +42,8 @@ AIOT_TOOLKIT_BIN=/path/to/aiot-toolkit/lib/bin.js node game/build.mjs
 
 产物：`data/local/dq3-m1.rpk`（包名 `com.klls.dq3watch`，应用名「DQ3 手表版」，金色菱形图标）。
 
+不想自己编译的话，Release 里直接下 [`dq3-m1.rpk`](https://github.com/kllss/dq3-watch-vela/releases)（debug 签名，用 AstroBox 拖进窗口侧载）。
+
 装之前建议先跑一遍加载检查（几秒，不用模拟器）：
 
 ```bash

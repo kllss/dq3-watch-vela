@@ -17,6 +17,7 @@ game/.build/
 game/build/
 game/dist/
 **/.build/
+**/.temp_*
 
 # ===== 与本仓库无关的工作区内容 =====
 .workbuddy/
@@ -24,12 +25,28 @@ game/dist/
 rw6-input-research/
 rw6-vela-input-research/
 rw6-vela-input-research.bundle
+# 同期另一个应用工程（独立仓库：watchmate）
+watchmate/
+# 第三方参考工程（ESP32 手表网关，含其自身 LICENSE，不混入本仓）
+Hoshino-ESP32-Watch-Gateway/
+Hoshino-*.zip
+# PlatformIO / xtensa 工具链辅助脚本
+/convert_xtensa.py
+/fix_cache_names.py
+/prefetch_packages.py
 # 第三方调研与下载缓存
 _research/
 _downloads/
 _net/
-# 同期另一个应用工程（尚未上传）
-watchmate/
+
+# ===== 设备鉴权材料：绝不提交 =====
+/watch_authkey.jpg
+*authkey*
+*.pem
+*.der
+
+# ===== 根目录散落的成品包 =====
+/*.rpk
 
 # ===== 临时文件 =====
 .tmp-*
